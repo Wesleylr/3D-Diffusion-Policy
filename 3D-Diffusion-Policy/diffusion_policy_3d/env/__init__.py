@@ -1,7 +1,19 @@
+from .maniskill import ManiSkillEnv
 
-from .adroit import AdroitEnv
-from .dexart import DexArtEnv
-from .metaworld import MetaWorldEnv
+try:
+	from .adroit import AdroitEnv
+except ModuleNotFoundError:
+	AdroitEnv = None
+
+try:
+	from .dexart import DexArtEnv
+except ModuleNotFoundError:
+	DexArtEnv = None
+
+try:
+	from .metaworld import MetaWorldEnv
+except ModuleNotFoundError:
+	MetaWorldEnv = None
 
 
 

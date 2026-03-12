@@ -3,7 +3,7 @@ if __name__ == "__main__":
     import os
     import pathlib
 
-    ROOT_DIR = str(pathlib.Path(__file__).parent.parent.parent)
+    ROOT_DIR = str(pathlib.Path(__file__).parent.parent)
     sys.path.append(ROOT_DIR)
     os.chdir(ROOT_DIR)
 
@@ -11,6 +11,7 @@ import os
 import hydra
 import torch
 import dill
+import inspect
 from omegaconf import OmegaConf
 import pathlib
 from torch.utils.data import DataLoader
@@ -68,6 +69,13 @@ class TrainDP3Workspace:
         self.global_step = 0
         self.epoch = 0
 
+    @staticmethod
+    def _run_env_runner(env_runner, policy, save_video=False):
+        run_signature = inspect.signature(env_runner.run)
+        if 'save_video' in run_signature.parameters:
+            return env_runner.run(policy, save_video=save_video)
+        return env_runner.run(policy)
+
     def run(self):
         cfg = copy.deepcopy(self.cfg)
         
@@ -87,7 +95,7 @@ class TrainDP3Workspace:
             RUN_CKPT = True
             verbose = False
         
-        RUN_VALIDATION = False # reduce time cost
+        RUN_VALIDATION = True # reduce time cost
         
         # resume training
         if cfg.training.resume:
@@ -254,7 +262,11 @@ class TrainDP3Workspace:
             if (self.epoch % cfg.training.rollout_every) == 0 and RUN_ROLLOUT and env_runner is not None:
                 t3 = time.time()
                 # runner_log = env_runner.run(policy, dataset=dataset)
-                runner_log = env_runner.run(policy)
+                runner_log = self._run_env_runner(
+                    env_runner,
+                    policy,
+                    save_video=True,
+                )
                 t4 = time.time()
                 # print(f"rollout time: {t4-t3:.3f}")
                 # log all
@@ -355,7 +367,11 @@ class TrainDP3Workspace:
         policy.eval()
         policy.cuda()
 
-        runner_log = env_runner.run(policy)
+        runner_log = self._run_env_runner(
+            env_runner,
+            policy,
+            save_video=True,
+        )
         
       
         cprint(f"---------------- Eval Results --------------", 'magenta')
