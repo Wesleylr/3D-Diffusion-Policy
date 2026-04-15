@@ -154,6 +154,7 @@ class ManiSkillRunner(BaseRunner):
 
         all_traj_rewards = []
         all_success_rates = []
+        episode_videos = []
         env = self.env
 
         if self.save_pointcloud_ply:
@@ -212,6 +213,12 @@ class ManiSkillRunner(BaseRunner):
             all_success_rates.append(is_success)
             all_traj_rewards.append(traj_reward)
 
+            if save_video:
+                episode_video = env.env.get_video()
+                if len(episode_video.shape) == 5:
+                    episode_video = episode_video[:, 0]
+                episode_videos.append(episode_video)
+
         log_data = dict()
         log_data['mean_traj_rewards'] = np.mean(all_traj_rewards)
         log_data['mean_success_rates'] = np.mean(all_success_rates)
@@ -224,14 +231,19 @@ class ManiSkillRunner(BaseRunner):
         log_data['SR_test_L3'] = self.logger_util_test.average_of_largest_K()
         log_data['SR_test_L5'] = self.logger_util_test10.average_of_largest_K()
 
-        videos = env.env.get_video()
-        if len(videos.shape) == 5:
-            videos = videos[:, 0]
-
         if save_video:
-            log_data['sim_video_eval'] = wandb.Video(videos, fps=self.fps, format='mp4')
+            for episode_idx, video in enumerate(episode_videos):
+                log_data[f'sim_video_eval_{episode_idx:02d}'] = wandb.Video(
+                    video, fps=self.fps, format='mp4'
+                )
+
+            if episode_videos:
+                # Keep the original key for backward compatibility.
+                log_data['sim_video_eval'] = wandb.Video(
+                    episode_videos[0], fps=self.fps, format='mp4'
+                )
 
         _ = env.reset()
-        videos = None
+        episode_videos = None
 
         return log_data

@@ -1,11 +1,11 @@
 defaults:
-  - task: maniskill_pickcube
+  - task: maniskill_stackcube
 
 name: train_dp3_maniskill
 
 task_name: ${task.task_name}
 shape_meta: ${task.shape_meta}
-exp_name: maniskill_pickcube_rgb
+exp_name: maniskill_stackcube_rgb
 
 horizon: 16
 n_obs_steps: 2
